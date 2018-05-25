@@ -27,10 +27,6 @@ window.App = {
         alert("Couldn't get any accounts! Make sure your Ethereum client is configured correctly.");
         return;
       }
-      
-      // Write Product info
-      App.setProductInfo();
-      App.getDataSources();
     });
   },
   
@@ -41,30 +37,42 @@ window.App = {
 
     if (contract_address && contract_address.length > 0 && contract_address.trim())
     {
-      Product.at(contract_address)
-      App.resetDataTable();
-      App.setProductInfo();
-      App.getDataSources();
+      console.log("Reloading product contract");
+      Product.at(contract_address).then(function(instance) {
+        App.resetDataTable();
+        App.setProductInfo(instance);
+        App.getDataSources(instance);
+      });
     }
   },
   
-  setProductInfo: function() {
-    Product.deployed().then(function(instance) {
-      return instance.vendor();
-    }).then(function(v) {
-      document.getElementById("product_info").innerHTML = v;
+  setProductInfo: function(pi) {
+      pi.vendor().then(function(v) {
+      let vendor = v;
+      pi.serialNumber.call().then(function(s){
+        document.getElementById("product_info").innerHTML = vendor + ": " + s;
+      });
     }).catch(function(e) {
       console.log(e);
     });
+  },
+
+  getDataSources: function(pi)
+  {
+    var dataSources;
     
-    Product.deployed().then(function(instance) {
-      return instance.serialNumber();
-    }).then(function(v) {
-      document.getElementById("product_info").innerHTML += " - " + v;
+    pi.getDataSources().then(function(v) {
+      dataSources = v;
+      for (let i = 0; i < dataSources.length; ++i)
+      {
+        pi.getData.call(dataSources[i]).then(function(d) { 
+          const table = document.getElementById("product_data");
+          table.insertAdjacentElement("beforeend", App.renderRow(web3.toAscii(dataSources[i]), d)); 
+        });  
+      }
     }).catch(function(e) {
       console.log(e);
-    });
-    
+    }); 
   },
   
   renderRow: function (l, r) {
@@ -77,73 +85,7 @@ window.App = {
     const table = document.getElementById("product_data");
     table.innerHTML = "";
   },
-  
-  getDataSources: function()
-  {
-    var dataSources;
-    
-    var pi;
-    Product.deployed().then(function(instance) {
-      pi = instance;
-      return pi.getDataSources();
-    }).then(function(v) {
-      dataSources = v;
-      for (let i = 0; i < dataSources.length; ++i)
-      {
-        pi.getData.call(dataSources[i]).then(function(d) { 
-          const table = document.getElementById("product_data");
-          table.insertAdjacentElement("beforeend", App.renderRow(web3.toAscii(dataSources[i]), d)); 
-        });  
-      }
-    }).catch(function(e) {
-      console.log(e);
-    });
-    
-  }
 };
-
-//   setStatus: function(message) {
-//     var status = document.getElementById("status");
-//     status.innerHTML = message;
-//   },
-
-//   refreshBalance: function() {
-//     var self = this;
-
-//     var meta;
-//     MetaCoin.deployed().then(function(instance) {
-//       meta = instance;
-//       return meta.getBalance.call(account, {from: account});
-//     }).then(function(value) {
-//       var balance_element = document.getElementById("balance");
-//       balance_element.innerHTML = value.valueOf();
-//     }).catch(function(e) {
-//       console.log(e);
-//       self.setStatus("Error getting balance; see log.");
-//     });
-//   },
-
-//   sendCoin: function() {
-//     var self = this;
-
-//     var amount = parseInt(document.getElementById("amount").value);
-//     var receiver = document.getElementById("receiver").value;
-
-//     this.setStatus("Initiating transaction... (please wait)");
-
-//     var meta;
-//     MetaCoin.deployed().then(function(instance) {
-//       meta = instance;
-//       return meta.sendCoin(receiver, amount, {from: account});
-//     }).then(function() {
-//       self.setStatus("Transaction complete!");
-//       self.refreshBalance();
-//     }).catch(function(e) {
-//       console.log(e);
-//       self.setStatus("Error sending coin; see log.");
-//     });
-//   }
-// };
 
 window.addEventListener('load', function() {
   // Checking if Web3 has been injected by the browser (Mist/MetaMask)
