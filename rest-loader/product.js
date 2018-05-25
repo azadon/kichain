@@ -63,13 +63,27 @@ exports.createContract = async function(params) {
 }
 
 exports.addData = function(params) {
-	console.log(params)
-	product = getProductInstance(params.address)
-	product.putData(params.source, params.data)
+	try {
+	    console.log("Add new data")	
+        console.log(params)
+		product = getProductInstance(params.address)
+		product.putData(params.source, params.data)
+	}
+	catch(err)
+	{
+	    console.log(err)
+	}
 }
 
 exports.getData = function(params) {
-	console.log(params)
-	product = getProductInstance(params.address)
-	return product.getData(params.source)
+	try {
+		console.log("Get data")	
+		console.log(params)
+		product = getProductInstance(params.address)
+		return product.getData(params.source)
+	}
+	catch(err)
+	{
+	    console.log(err)
+	}
 }

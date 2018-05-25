@@ -4,6 +4,6 @@ module.exports = function(app) {
 
   app.route('/product')
     .put(product.createContract)
-    .get(product.addData)
-    .post(product.getData);
+    .post(product.addData)
+    .get(product.getData);
 };

@@ -20,8 +20,8 @@ exports.createContract = async function(req, res) {
 exports.addData = function(req, res) {
   console.log(req.body)
   try {
-    result = product.addData(req.body)
-    res.json(task);
+    var result = product.addData(req.body)
+    res.json(result);
   }catch(err)
   {
     res.send(err);
@@ -31,8 +31,8 @@ exports.addData = function(req, res) {
 exports.getData = function(req, res) {
   console.log(req.body)
   try {
-    result = product.getData(req.body)
-    res.json(task);
+    var result = product.getData(req.body)
+    res.json(result);
   }catch(err)
   {
     res.send(err);
