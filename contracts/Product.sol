@@ -2,10 +2,10 @@ pragma solidity ^0.4.18;
 
 contract Product {
 
-    bytes32[] public vendor;
+    string public vendor;
 
-    bytes32[] public serialNumber;
+    string public serialNumber;
 
-    mapping (bytes32[] => bytes32[]) public data;
+    mapping (string => string) public data;
 }
 
