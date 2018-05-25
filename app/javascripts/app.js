@@ -10,39 +10,44 @@ import product_artifacts from '../../build/contracts/Product.json'
 
 var Product = contract(product_artifacts);
 
-// The following code is simple to show off interacting with your contracts.
-// As your needs grow you will likely need to change its form and structure.
-// For application bootstrapping, check out window.addEventListener below.
-var accounts;
-var account;
-
 window.App = {
   start: function() {
     var self = this;
-
+    
     Product.setProvider(web3.currentProvider);
-
+    
     // Get the initial account balance so it can be displayed.
     web3.eth.getAccounts(function(err, accs) {
       if (err != null) {
         alert("There was an error fetching your accounts.");
         return;
       }
-
+      
       if (accs.length == 0) {
         alert("Couldn't get any accounts! Make sure your Ethereum client is configured correctly.");
         return;
       }
-
-      accounts = accs;
-      account = accounts[0];
-
+      
       // Write Product info
       App.setProductInfo();
       App.getDataSources();
     });
   },
+  
+  readContractAddr: function()
+  {
+    var contract_address = document.getElementById('contract_address').value;
+    console.log("Address: '" + contract_address + "'");
 
+    if (contract_address && contract_address.length > 0 && contract_address.trim())
+    {
+      Product.at(contract_address)
+      App.resetDataTable();
+      App.setProductInfo();
+      App.getDataSources();
+    }
+  },
+  
   setProductInfo: function() {
     Product.deployed().then(function(instance) {
       return instance.vendor();
@@ -51,7 +56,7 @@ window.App = {
     }).catch(function(e) {
       console.log(e);
     });
-
+    
     Product.deployed().then(function(instance) {
       return instance.serialNumber();
     }).then(function(v) {
@@ -59,27 +64,28 @@ window.App = {
     }).catch(function(e) {
       console.log(e);
     });
-
+    
   },
-
+  
   renderRow: function (l, r) {
     const rowEl = document.createElement('tr');
     rowEl.innerHTML = `<td>${l}</td><td>${r}</td>`
     return rowEl;
   },
-
-  updateDataTable: function(l, r) {
-    const table = document.getElementById("product_data"); 
+  
+  resetDataTable: function(l, r) {
+    const table = document.getElementById("product_data");
+    table.innerHTML = "";
   },
-
+  
   getDataSources: function()
   {
     var dataSources;
-
+    
     var pi;
     Product.deployed().then(function(instance) {
       pi = instance;
-      return instance.getdataSources();
+      return pi.getDataSources();
     }).then(function(v) {
       dataSources = v;
       for (let i = 0; i < dataSources.length; ++i)
@@ -87,12 +93,12 @@ window.App = {
         pi.getData.call(dataSources[i]).then(function(d) { 
           const table = document.getElementById("product_data");
           table.insertAdjacentElement("beforeend", App.renderRow(web3.toAscii(dataSources[i]), d)); 
-          });  
+        });  
       }
     }).catch(function(e) {
       console.log(e);
     });
-
+    
   }
 };
 
@@ -146,10 +152,10 @@ window.addEventListener('load', function() {
     // Use Mist/MetaMask's provider
     window.web3 = new Web3(web3.currentProvider);
   } else {
-    console.warn("No web3 detected. Falling back to http://127.0.0.1:8545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
+    console.warn("No web3 detected. Falling back to http://127.0.0.1:9545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
     // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-    window.web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:8545"));
+    window.web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));
   }
-
+  
   App.start();
 });
