@@ -1,14 +1,18 @@
 'use strict';
 
-var product = require('product'),
+var product = require('./product.js')
 
-exports.createContract = function(req, res) {
+exports.createContract = async function(req, res) {
   console.log(req.body)
   try {
-    result = product.createContract(req.body)
-    res.json(task);
+    console.log('Creating contract...')
+    var result = await product.createContract(req.body)
+    console.log('Result in controller',result)
+
+    res.json(result);
   }catch(err)
   {
+    console.log('An error occured')
     res.send(err);
   }
 }
@@ -27,7 +31,7 @@ exports.addData = function(req, res) {
 exports.getData = function(req, res) {
   console.log(req.body)
   try {
-    result = product.createContract(req.body)
+    result = product.getData(req.body)
     res.json(task);
   }catch(err)
   {

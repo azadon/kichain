@@ -2,13 +2,19 @@ Web3 = require('web3')
 solc = require('solc')
 fs = require('fs')
 
+// await sleep trick
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function createProductContract() {
+	console.log('Compilation of product contract...')
 	web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
-	code = fs.readFileSync('contracts/Product.sol').toString()
+	code = fs.readFileSync('../contracts/Product.sol').toString()
 	compiledCode = solc.compile(code)
-	console.log(compiledCode.contracts)
 	abiDefinition = JSON.parse(compiledCode.contracts[':Product'].interface)
 	ProductContract = web3.eth.contract(abiDefinition)
+	return ProductContract
 }
 
 function getProductInstance(address) {
@@ -17,20 +23,42 @@ function getProductInstance(address) {
 	return contractInstance
 }
 
-exports.createContract = function(params) {
-	console.log(params)
-	ProductContract = createProductContract()
-	byteCode = compiledCode.contracts[':Product'].bytecode
-	deployedContract = ProductContract.new(params.vendor, 
-					        params.serialNumber, 
-							params.sourcesList, 
-						{	data: byteCode, 
-							from: web3.eth.accounts[0], 
-							gas: 4700000})
-	contractInstance = ProductContract.at(deployedContract.address)
-	console.log('Deployed contract for', vendor, serialNumber, 'address:', deployedContract.address)
-	result = {}
-	result.address = deployedContract.address
+exports.createContract = async function(params) {
+	var result = {}
+	try {
+		console.log('Creating product contract...')
+		console.log(params.vendor)
+		console.log('Compilation of product contract...')
+		web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
+		code = fs.readFileSync('../contracts/Product.sol').toString()
+		compiledCode = solc.compile(code)
+		abiDefinition = JSON.parse(compiledCode.contracts[':Product'].interface)
+		ProductContract = web3.eth.contract(abiDefinition)
+		byteCode = compiledCode.contracts[':Product'].bytecode
+		console.log('Deploying product contract... ')
+		deployedContract = ProductContract.new(params.vendor, params.serialNumber, JSON.parse(params.sourcesList),
+							{	data: byteCode, 
+								from: web3.eth.accounts[0], 
+								gas: 4700000})
+		let receipt = undefined
+		while (true) {
+  		  receipt = web3.eth.getTransactionReceipt(deployedContract.transactionHash);
+		  if (receipt && receipt.contractAddress) {
+		      break;
+		    }
+		    console.log("Waiting a mined block to include your contract... currently in block " + web3.eth.blockNumber);
+		    await sleep(4000)
+		  }
+		console.log('Deployed ')
+		console.log('Deployed contract for', params.vendor, params.serialNumber, 'address:', receipt.contractAddress)
+		result.address = receipt.contractAddress
+		console.log('Result: ', result)
+	}
+	catch(err)
+	{
+		console.log('Error in contract deployment.')
+		console.log(err)
+	}
 	return result
 }
 
