@@ -6,10 +6,9 @@ import { default as Web3} from 'web3';
 import { default as contract } from 'truffle-contract'
 
 // Import our contract artifacts and turn them into usable abstractions.
-import metacoin_artifacts from '../../build/contracts/MetaCoin.json'
+import product_artifacts from '../../build/contracts/Product.json'
 
-// MetaCoin is our usable abstraction, which we'll use through the code below.
-var MetaCoin = contract(metacoin_artifacts);
+var Product = contract(product_artifacts);
 
 // The following code is simple to show off interacting with your contracts.
 // As your needs grow you will likely need to change its form and structure.
@@ -21,8 +20,7 @@ window.App = {
   start: function() {
     var self = this;
 
-    // Bootstrap the MetaCoin abstraction for Use.
-    MetaCoin.setProvider(web3.currentProvider);
+    Product.setProvider(web3.currentProvider);
 
     // Get the initial account balance so it can be displayed.
     web3.eth.getAccounts(function(err, accs) {
@@ -39,52 +37,107 @@ window.App = {
       accounts = accs;
       account = accounts[0];
 
-      self.refreshBalance();
+      // Write Product info
+      App.setProductInfo();
+      App.getDataSources();
     });
   },
 
-  setStatus: function(message) {
-    var status = document.getElementById("status");
-    status.innerHTML = message;
-  },
-
-  refreshBalance: function() {
-    var self = this;
-
-    var meta;
-    MetaCoin.deployed().then(function(instance) {
-      meta = instance;
-      return meta.getBalance.call(account, {from: account});
-    }).then(function(value) {
-      var balance_element = document.getElementById("balance");
-      balance_element.innerHTML = value.valueOf();
+  setProductInfo: function() {
+    Product.deployed().then(function(instance) {
+      return instance.vendor();
+    }).then(function(v) {
+      document.getElementById("product_info").innerHTML = v;
     }).catch(function(e) {
       console.log(e);
-      self.setStatus("Error getting balance; see log.");
     });
-  },
 
-  sendCoin: function() {
-    var self = this;
-
-    var amount = parseInt(document.getElementById("amount").value);
-    var receiver = document.getElementById("receiver").value;
-
-    this.setStatus("Initiating transaction... (please wait)");
-
-    var meta;
-    MetaCoin.deployed().then(function(instance) {
-      meta = instance;
-      return meta.sendCoin(receiver, amount, {from: account});
-    }).then(function() {
-      self.setStatus("Transaction complete!");
-      self.refreshBalance();
+    Product.deployed().then(function(instance) {
+      return instance.serialNumber();
+    }).then(function(v) {
+      document.getElementById("product_info").innerHTML += " - " + v;
     }).catch(function(e) {
       console.log(e);
-      self.setStatus("Error sending coin; see log.");
     });
+
+  },
+
+  renderRow: function (l, r) {
+    const rowEl = document.createElement('tr');
+    rowEl.innerHTML = `<td>${l}</td><td>${r}</td>`
+    return rowEl;
+  },
+
+  updateDataTable: function(l, r) {
+    const table = document.getElementById("product_data"); 
+  },
+
+  getDataSources: function()
+  {
+    var dataSources;
+
+    var pi;
+    Product.deployed().then(function(instance) {
+      pi = instance;
+      return instance.getdataSources();
+    }).then(function(v) {
+      dataSources = v;
+      for (let i = 0; i < dataSources.length; ++i)
+      {
+        pi.getData.call(dataSources[i]).then(function(d) { 
+          const table = document.getElementById("product_data");
+          table.insertAdjacentElement("beforeend", App.renderRow(web3.toAscii(dataSources[i]), d)); 
+          });  
+      }
+    }).catch(function(e) {
+      console.log(e);
+    });
+
   }
 };
+
+//   setStatus: function(message) {
+//     var status = document.getElementById("status");
+//     status.innerHTML = message;
+//   },
+
+//   refreshBalance: function() {
+//     var self = this;
+
+//     var meta;
+//     MetaCoin.deployed().then(function(instance) {
+//       meta = instance;
+//       return meta.getBalance.call(account, {from: account});
+//     }).then(function(value) {
+//       var balance_element = document.getElementById("balance");
+//       balance_element.innerHTML = value.valueOf();
+//     }).catch(function(e) {
+//       console.log(e);
+//       self.setStatus("Error getting balance; see log.");
+//     });
+//   },
+
+//   sendCoin: function() {
+//     var self = this;
+
+//     var amount = parseInt(document.getElementById("amount").value);
+//     var receiver = document.getElementById("receiver").value;
+
+//     this.setStatus("Initiating transaction... (please wait)");
+
+//     var meta;
+//     MetaCoin.deployed().then(function(instance) {
+//       meta = instance;
+//       return meta.sendCoin(receiver, amount, {from: account});
+//     }).then(function() {
+//       self.setStatus("Transaction complete!");
+//       self.refreshBalance();
+//     }).catch(function(e) {
+//       console.log(e);
+//       self.setStatus("Error sending coin; see log.");
+//     });
+//   }
+// };
 
 window.addEventListener('load', function() {
   // Checking if Web3 has been injected by the browser (Mist/MetaMask)
@@ -93,9 +146,9 @@ window.addEventListener('load', function() {
     // Use Mist/MetaMask's provider
     window.web3 = new Web3(web3.currentProvider);
   } else {
-    console.warn("No web3 detected. Falling back to http://127.0.0.1:9545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
+    console.warn("No web3 detected. Falling back to http://127.0.0.1:8545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
     // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-    window.web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));
+    window.web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:8545"));
   }
 
   App.start();
