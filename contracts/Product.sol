@@ -22,7 +22,7 @@ contract Product {
         data[dataSource] = data_;
     }
 
-    function getdataSources()  view public returns (bytes32[]) {
+    function getDataSources()  view public returns (bytes32[]) {
         return dataSources;
     }
 
